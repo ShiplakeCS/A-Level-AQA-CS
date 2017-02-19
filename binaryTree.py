@@ -1,3 +1,12 @@
+"""
+ An implementation of a Binary Tree based on the description given in Computer Science by Bob Reeves
+ (Hodder Eduction, 2015). This is not a terribly good implementation as it doesn't take advantage of OOP to create
+ node objects to build the tree. Instead it uses three arrays (lists), node[], left[] and right[] to keep track of
+ which nodes are to the left and right of each other node.
+
+ For a better implementation, see bTree.py in this project.
+
+"""
 class BinaryTree:
     __node = []
     __left = []
