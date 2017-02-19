@@ -1,3 +1,11 @@
+"""
+OOP implementation of a binary tree (comprised of linked/chained BTreeNode objects). 
+Contains methods for adding data to the tree in their correct (sorted) location and for
+traversing the tree using in-order, pre-order and post-order traversal algorithms.
+
+Companion to pp 72-74, 97-98 in AQA A Level Computer Science by Bob Reeves (Hodder Education, 2015).
+"""
+
 class BTreeNode:
     __data = None
     __left = None
