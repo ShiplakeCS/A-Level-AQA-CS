@@ -46,7 +46,7 @@ def print_adj_matrix():
     # Generate column headings
     headingString = "  "
     for colNum in range(len(graph)):
-        headingString += "|{:^8}".format(chr(65 + colNum))
+        headingString += "|{:^6}".format(chr(65 + colNum))
     print(headingString)
     print("-" * len(headingString))
 
@@ -54,7 +54,7 @@ def print_adj_matrix():
     for rowNum in range(len(graph)):
         rowString = "{0} ".format(chr(65 + rowNum))
         for colValue in graph[rowNum]:
-            rowString += '|{:^8}'.format(str(colValue))
+            rowString += '|{:^6}'.format(str(colValue) if colValue is not None else "-")
         print(rowString)
 
     print("-" * len(headingString))
