@@ -1,7 +1,7 @@
 # Examples of Basic Operations in Programming Languages
 # Operations taken from AQA A Level Computer Science specification and Bob Reeves text book, Chapter 3
 
-import random, math
+import random
 
 # Storing values in variables
 num1 = 2
