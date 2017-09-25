@@ -1,4 +1,4 @@
-from show_list_contents import *
+from algorithms.show_list_contents import *
 
 # A merge sort based on the AQA pseudocode for a merge sort
 
