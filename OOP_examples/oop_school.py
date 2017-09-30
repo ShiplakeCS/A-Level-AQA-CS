@@ -3,7 +3,8 @@
 # Sources: http://www.bogotobogo.com/python/python_private_attributes_methods.php
 #          https://www.programiz.com/python-programming/property
 
-import time
+import random
+
 
 class Teacher:
 
@@ -27,19 +28,61 @@ class Teacher:
     def staffcode(self, code):
         self.__staffcode = code
 
+
+class Event:
+    # No __init__ as this abstract class cannot be instantiated
+    def __init__(self, value, description, teacher: Teacher):
+        self.__value = value
+        self.__description = description
+        self.__teacher = teacher
+
+    @property
+    def value(self):
+        return self.__value
+
+    def __str__(self):
+        return "({0}): {1}. Given by {2}.".format(self.value, self.__description, self.__teacher.staffcode)
+
+class Infraction(Event):
+
+    def __init__(self, value, description, teacher: Teacher):
+
+        if value < - 3 or value > -1:  # Neater way of writing if value < -3 and value > -1:
+            raise ValueError("Infraction values must be between -1 and -3")
+
+        # Call the init method of the parent (super) class before overriding necessary values
+        super(Infraction, self).__init__(value, description, teacher)
+
+    def __str__(self):
+        # Override the parent __str__ method by returning "Infraction" joined to the parent (super) __str__ method's output
+        return "Infraction" + super(Infraction, self).__str__()
+
+
+class Excellence(Event):
+
+    def __init__(self, value, description, teacher: Teacher):
+
+        if value < 1 or value > 3:
+            raise ValueError("Excellence values must be between 1 and 3")
+
+        super(Excellence, self).__init__(value, description, teacher)
+        
+    def __str__(self):
+        return "Excellence " + super(Excellence, self).__str__()
+
 class Pupil:
 
     # Initialisation - __init__() is a special method that is run when an object of this class is first created. This
     # can be used to set essential property values.
     def __init__(self, name, yg=None, house=None, tutor=None):
-        self.name = name
+        self.__name = name
         if yg != None:
-            self.year_group = yg
+            self.__year_group = yg
         if tutor == None:
-            self.tutor = Teacher("Unset", "---")
+            self.__tutor = Teacher("Unset", "---")
         else:
-            self.tutor = tutor
-        self.house = house
+            self.__tutor = tutor
+        self.__house = house
         self.__events = [] # Initialise with an emtpy Events list
 
 
@@ -87,16 +130,30 @@ class Pupil:
     def events(self):
         return self.__events
 
-    def addEvent(self, event):
+    def add_event(self, event):
         self.__events.append(event)
 
     @property
     def inf_points(self):
-        pass
+
+        points = 0
+
+        for event in self.__events:
+            if type(event) == Infraction:
+                points += event.value
+
+        return points
 
     @property
     def exc_points(self):
-        pass
+
+        points = 0
+
+        for event in self.__events:
+            if type(event) == Excellence:
+                points += event.value
+
+        return points
 
     def print_details(self):
         print("-" * 20)
@@ -108,6 +165,12 @@ class Pupil:
         print("Excellence Points:", self.exc_points)
         print("Infraction Points:", self.inf_points)
         print("-" * 20)
+
+        if self.exc_points > 0 or self.inf_points > 0:
+            show_events = input("Would you like to see details of {0}'s events? (y/n): ".format(self.name))
+            if show_events.lower() == "y":
+                for event in self.events:
+                    print(event)
 
 
 class House:
@@ -223,15 +286,45 @@ set_12COM.print_details()
 
 # Print some related data for one of the pupils in a class...
 
-p = set_12COM.pupils[1] # This is the second pupil in the 12COM class set (Ethan)
+random_pupil = random.randrange(set_12MAT.size) # randrange gets a range of values from 0 to the specified value
 
-print(p.name) # property of p
-print(p.house.name) # property of p.house
-print(p.house.house_master.name) # proptery of p.house.house_master - Notice that we can keep "chaining" properties of
+p = set_12COM.pupils[random_pupil] # This is the second pupil in the 12COM class set (Ethan)
+
+print("\nDetails of a randomly picked pupil...")
+print("Name:", p.name) # property of p
+print("House:", p.house.name) # property of p.house
+print("House master:", p.house.house_master.name) # proptery of p.house.house_master - Notice that we can keep "chaining" properties of
                                  # objects contained within other objects
 
+print("\nFacts about a class set...")
+print("The teacher of {0} is {1} ({2})".format(set_12MAT.name, set_12MAT.teacher.name, set_12MAT.teacher.staffcode))
 
 
+# Assign a pupil an event
+# Note that in this example, we are referencing the pupil by two different class sets, however they are the same
+# instance of a pupil object - i.e. what we update via one class set, is updated everywhere that the pupil object
+# is accessed.
+
+# Jack has misbehaved for me.
+set_12COM.pupils[0].add_event(Infraction(-3, "Throwing a chair across the room", teachers['AWD']))
+set_12COM.pupils[0].add_event(Infraction(-1, "Talking during lesson on object oriented programming", teachers['AWD']))
+
+# Jack has done great work for Mr Curtis.
+set_12MAT.pupils[0].add_event(Excellence(2, "Repeatedly producing great notes", teachers['RBC']))
+
+# Let's see Jack's details now that he has some events logged against him.
+set_12COM.pupils[0].print_details()
 
 
+# Now let's change the house master of Skipwith...
+input("\n*** Press Enter to update the Housemaster of Skipwith to Mr. L-K ***")
+skipwith.house_master = Teacher("Mr. L-K", "CMLK")
+print("Proving Skipwith object has been updated")
 
+# This information has now been updated for all pupils that are assigned to Skipwith:
+
+p = set_12COM.pupils[1] # Should be Ethan as he was the second person added to 12COM
+print("Name:", p.name) # property of p
+print("House:", p.house.name) # property of p.house
+print("House master:", p.house.house_master.name) # proptery of p.house.house_master - Notice that we can keep "chaining" properties of
+                                 # objects contained within other objects
