@@ -5,6 +5,7 @@
 
 import random
 
+from abc import ABC, abstractmethod
 
 class Teacher:
 
@@ -28,62 +29,114 @@ class Teacher:
     def staffcode(self, code):
         self.__staffcode = code
 
+from abc import ABC, abstractmethod
 
-class Event:
-    # No __init__ as this abstract class cannot be instantiated
+# Event inherits from the class ABC, provided by the abc module
+class PupilEvent(ABC):
+
     def __init__(self, value, description, teacher: Teacher):
-        self.__value = value
+        pass
+
+    @property
+    @abstractmethod
+    def value(self):
+        pass
+
+    @value.setter
+    @abstractmethod
+    def value(self, v):
+        pass
+
+    @property
+    @abstractmethod
+    def teacher(self):
+        pass
+
+    @abstractmethod
+    def __str__(self):
+        pass
+
+
+class Infraction(PupilEvent):
+
+    def __init__(self, value, description, teacher: Teacher):
+
+        super(Infraction, self).__init__(value, description, teacher)
+
+        self.value = value
         self.__description = description
         self.__teacher = teacher
 
     @property
     def value(self):
-        return self.__value
+        return -self.__value
+
+    @value.setter
+    def value(self, v):
+        if v < 1 or v > 3:
+            raise ValueError("Infraction values must be between 1 and 3")
+        self.__value = v
+
+    @property
+    def teacher(self):
+        return self.__teacher
 
     def __str__(self):
-        return "({0}): {1}. Given by {2}.".format(self.value, self.__description, self.__teacher.staffcode)
-
-class Infraction(Event):
-
-    def __init__(self, value, description, teacher: Teacher):
-
-        if value < - 3 or value > -1:  # Neater way of writing if value < -3 and value > -1:
-            raise ValueError("Infraction values must be between -1 and -3")
-
-        # Call the init method of the parent (super) class before overriding necessary values
-        super(Infraction, self).__init__(value, description, teacher)
-
-    def __str__(self):
-        # Override the parent __str__ method by returning "Infraction" joined to the parent (super) __str__ method's output
-        return "Infraction" + super(Infraction, self).__str__()
+        # Override the parent __str__ method by returning "Infraction" joined to the parent
+        # (super) __str__ method's output
+        return "Infraction [{0}]: {1}. Given by {2}.".format(self.value, self.__description,
+                                                             self.__teacher.staffcode)
 
 
-class Excellence(Event):
+class Excellence(PupilEvent):
 
     def __init__(self, value, description, teacher: Teacher):
-
-        if value < 1 or value > 3:
-            raise ValueError("Excellence values must be between 1 and 3")
 
         super(Excellence, self).__init__(value, description, teacher)
-        
+
+        self.value = value
+        self.__description = description
+        self.__teacher = teacher
+
+
+    @property
+    def value(self):
+        return self.__value
+
+    @value.setter
+    def value(self, v):
+        if v < 1 or v > 3:
+            raise ValueError("Excellence Slip values must be between 1 and 3")
+        self.__value = v
+
+    @property
+    def teacher(self):
+        return self.__teacher
+
     def __str__(self):
-        return "Excellence " + super(Excellence, self).__str__()
+        return "Excellence Slip [{0}]: {1}. Given by {2}.".format(self.value, self.__description,
+                                                                  self.__teacher.staffcode)
+
 
 class Pupil:
 
-    # Initialisation - __init__() is a special method that is run when an object of this class is first created. This
-    # can be used to set essential property values.
+    # Initialisation - __init__() is a special method that is run when an object of this class is
+    # first created. This is used to set essential property values.
     def __init__(self, name, yg=None, house=None, tutor=None):
+
         self.__name = name
-        if yg != None:
+
+        if yg is not None:
             self.__year_group = yg
-        if tutor == None:
+
+        if tutor is None:
             self.__tutor = Teacher("Unset", "---")
         else:
             self.__tutor = tutor
+
         self.__house = house
-        self.__events = [] # Initialise with an emtpy Events list
+
+        self.__events = []  # Initialise with an emtpy Events list
 
 
     # Define a 'name' property, whose value will be stored in a private variable and, when accessed, will be returned
@@ -130,7 +183,7 @@ class Pupil:
     def events(self):
         return self.__events
 
-    def add_event(self, event):
+    def add_event(self, event: PupilEvent):
         self.__events.append(event)
 
     @property
@@ -161,13 +214,15 @@ class Pupil:
         print("-" * 20)
         print("Year Group:", self.year_group)
         print("House:", self.house.name)
+        print("House master:", self.house.house_master.name)
         print("Tutor:", self.tutor.name)
         print("Excellence Points:", self.exc_points)
         print("Infraction Points:", self.inf_points)
         print("-" * 20)
 
         if self.exc_points > 0 or self.inf_points > 0:
-            show_events = input("Would you like to see details of {0}'s events? (y/n): ".format(self.name))
+            show_events = input("Would you like to see details of {0}'s events? (y/n): "
+                                .format(self.name))
             if show_events.lower() == "y":
                 for event in self.events:
                     print(event)
@@ -306,8 +361,8 @@ print("The teacher of {0} is {1} ({2})".format(set_12MAT.name, set_12MAT.teacher
 # is accessed.
 
 # Jack has misbehaved for me.
-set_12COM.pupils[0].add_event(Infraction(-3, "Throwing a chair across the room", teachers['AWD']))
-set_12COM.pupils[0].add_event(Infraction(-1, "Talking during lesson on object oriented programming", teachers['AWD']))
+set_12COM.pupils[0].add_event(Infraction(3, "Throwing a chair across the room", teachers['AWD']))
+set_12COM.pupils[0].add_event(Infraction(1, "Talking during lesson on object oriented programming", teachers['AWD']))
 
 # Jack has done great work for Mr Curtis.
 set_12MAT.pupils[0].add_event(Excellence(2, "Repeatedly producing great notes", teachers['RBC']))
@@ -316,15 +371,45 @@ set_12MAT.pupils[0].add_event(Excellence(2, "Repeatedly producing great notes", 
 set_12COM.pupils[0].print_details()
 
 
-# Now let's change the house master of Skipwith...
-input("\n*** Press Enter to update the Housemaster of Skipwith to Mr. L-K ***")
-skipwith.house_master = Teacher("Mr. L-K", "CMLK")
-print("Proving Skipwith object has been updated")
+# # Now let's change the house master of Skipwith...
+# input("\n*** Press Enter to update the Housemaster of Skipwith to Mr. L-K ***")
+# skipwith.house_master = Teacher("Mr. L-K", "CMLK")
+# print("Proving Skipwith object has been updated")
 
 # This information has now been updated for all pupils that are assigned to Skipwith:
 
 p = set_12COM.pupils[1] # Should be Ethan as he was the second person added to 12COM
-print("Name:", p.name) # property of p
-print("House:", p.house.name) # property of p.house
-print("House master:", p.house.house_master.name) # proptery of p.house.house_master - Notice that we can keep "chaining" properties of
-                                 # objects contained within other objects
+p.print_details()
+
+
+
+# Create instances of Class Set objects
+
+set_12COM = ClassSet("12COM", teachers['AWD'])
+set_12MAT = ClassSet("12MAT", teachers['RBC'])
+
+# Add pupils to the class sets
+
+p = Pupil("Jack Burgess", 12, skipwith)
+set_12COM.add_pupil(p)
+set_12MAT.add_pupil(p)
+
+p = Pupil("Ethan Caldeira", 12, skipwith)
+set_12COM.add_pupil(p)
+set_12MAT.add_pupil(p)
+
+# Assign some pupil an events
+
+# Jack has misbehaved for me.
+set_12COM.pupils[0].add_event(Infraction(3, "Throwing a chair across the room", teachers['AWD']))
+
+# Jack has also done some good work for me
+set_12COM.pupils[0].add_event(Excellence(1, "Excellent focus during today's lesson", teachers['AWD']))
+
+# Jack has also done great work for Mr Curtis.
+set_12MAT.pupils[0].add_event(Excellence(2, "Repeatedly producing great notes", teachers['RBC']))
+
+# Let's see Jack's details now that he has some events logged against him.
+set_12COM.pupils[0].print_details()
+
+

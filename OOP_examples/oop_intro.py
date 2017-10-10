@@ -38,18 +38,20 @@ class Pupil:
         self.__year_group = yg
 
     def print_details(self):
+        print("-- in Pupil print_details() method --")
+        print("-" * 20)
         print("Details for", self.name)
         print("Year Group:", self.year_group)
-        print("-" * 20)
 
-class Boarder(Pupil): # The parent class is specified within the brackets after the class name
+
+class Boarder(Pupil):
 
     def __init__(self, name, year, boarder_type, room_no):
 
-        self.name = name
-        self.year_group = year
-        self.boarder_type = boarder_type
-        self.room_number = room_no
+        super(Boarder, self).__init__(name, year)
+
+        self.__boarder_type = boarder_type
+        self.__room_number = room_no
 
     @property
     def boarder_type(self):
@@ -57,7 +59,7 @@ class Boarder(Pupil): # The parent class is specified within the brackets after 
 
     @boarder_type.setter
     def boarder_type(self,t):
-        if t != "weekly" and t != "flexi" and t != "full":
+        if t is not "weekly" and t is not "flexi" and t is not "full":
             raise ValueError("Boarder type must be either weekly, flexi or full")
         self.__boarder_type = t
 
@@ -73,11 +75,15 @@ class Boarder(Pupil): # The parent class is specified within the brackets after 
 
     # Overridden method from parent class to show additional details for Boarder pupils
     def print_details(self):
-        print("Details for", self.name)
-        print("Year Group:", self.year_group)
+
+        print("-- In Boarder's print_details() method --")
+
+        super(Boarder, self).print_details() # Calls the parent's print_details() method
+
+        # Now print the extra details unique to the Boarder subclass
+
         print("Boarder type:", self.boarder_type)
         print("Room number:", self.room_number)
-        print("-" * 20)
 
 
 
@@ -95,6 +101,5 @@ pupils = [pupil1, pupil2, boarding_pupil]
 for p in pupils:
 
     p.print_details() # We can call the same method on Pupil and Boarder objects and the output will be slightly different due to overriding
-
 
 
