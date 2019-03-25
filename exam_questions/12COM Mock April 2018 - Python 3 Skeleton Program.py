@@ -231,7 +231,7 @@ class Game:
       return ""
     
   def DisplayWonGameMessage(self):
-    print("Well done!  You have found the flask containing the Styxian potion.")
+    print("Well done!  You have found the flask_examples containing the Styxian potion.")
     print("You have won the game of MONSTER!")
     print()    
 
