@@ -1,0 +1,12 @@
+Add Class methods to...
+
+Get all messages for a user
+Get all messages for a chat room
+Create a new message (User.create_message(text,attachment,creator_id)
+Message.add_attachment() - invokes MessageAttachment.add_to_db() but using message's self.id as parent id
+User login / authentication
+
+
+toJSON() methods - can be invoked by .json property
+
+HTML Template pages to provide functionality

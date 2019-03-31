@@ -1,4 +1,4 @@
-from flask import Flask, g, render_template
+from flask import Flask, g, render_template, request, redirect, url_for
 import os, sqlite3
 from flask_examples.CollegeChat import cc_classes
 
@@ -48,10 +48,20 @@ def say_hello(user):
 
 
 # TEST ROUTES
-@app.route('/tests/user/<id>')
-def test_user_id(id):
+@app.route('/tests/users/<id>')
+def tests_user_id(id):
     u = cc_classes.User(id)
     return "User object - Username: {}, email: {}, joined: {}".format(u.username, u.email, u.joined)
+
+@app.route('/tests/messages/<int:id>')
+def tests_messages_id(id):
+    m = cc_classes.Message(id)
+    return "Message ID: {}, Contents: {}, Sender: {}, Message sent: {}".format(m.id, m.contents, m.sender.username, m.ts)
+
+@app.route('/tests/messages/add')
+def tests_messages_add():
+    m = cc_classes.Message.add_to_db("A new message added by the test route /tests/messages/add", 1, 1, request.remote_addr, "No UA: TEST METHOD")
+    return "Message ID: {}, Contents: {}, Sender: {}, Message sent: {}".format(m.id, m.contents, m.sender.username, m.ts)
 
 # When this script is run directly by the Python interpreter, do the following...
 if __name__ == '__main__':
