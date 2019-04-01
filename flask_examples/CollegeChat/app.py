@@ -63,6 +63,13 @@ def tests_messages_add():
     m = cc_classes.Message.add_to_db("A new message added by the test route /tests/messages/add", 1, 1, request.remote_addr, "No UA: TEST METHOD")
     return "Message ID: {}, Contents: {}, Sender: {}, Message sent: {}".format(m.id, m.contents, m.sender.username, m.ts)
 
+@app.route('/tests/chatrooms/add/<name>')
+def tests_chatroom_add(name):
+
+    cr = cc_classes.Chatroom.add_to_db(name, False, cc_classes.User(1))
+
+    return "Chatroom added! ID: {}, Name: {}, Owners: {}".format(cr.id, cr.name, cr.owners)
+
 # When this script is run directly by the Python interpreter, do the following...
 if __name__ == '__main__':
     # Run the webapp in Debug mode (no need to restart when changes are made and set host to broadcast to allow

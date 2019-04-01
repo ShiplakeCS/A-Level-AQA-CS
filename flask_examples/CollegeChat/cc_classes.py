@@ -314,3 +314,139 @@ class Message(DBObject):
 
     def update_in_db(self):
         pass
+
+class ChatroomNotFoundError(Exception):
+    pass
+
+
+class Chatroom(DBObject):
+
+    def __init__(self, id):
+
+        self.__id = id
+
+        db = get_db()
+
+        chatroom_row = db.execute("SELECT Name, isPrivate, CreatedTS, Disabled FROM ChatRoom WHERE ID=?", [id]).fetchone()
+
+        if not chatroom_row:
+            raise ChatroomNotFoundError("No Chatroom with ID {} found in DB".format(self.__id))
+
+        self.__name = chatroom_row['Name']
+        self.__private = bool(chatroom_row['isPrivate'])
+        self.__disabled = bool(chatroom_row['Disabled'])
+        self.__createdTS = datetime.fromtimestamp(float(chatroom_row['CreatedTS']))
+
+        self.__updates_pending = False
+
+    @property
+    def id(self):
+        return self.__id
+
+    @property
+    def name(self):
+        return self.__name
+
+    @property
+    def private(self):
+        return self.__private
+
+    @property
+    def disabled(self):
+        return self.__disabled
+
+    @property
+    def active(self):
+        return not self.__disabled
+
+    @property
+    def createdTS(self):
+        return self.__createdTS
+
+    @property
+    def messages(self):
+        return None #TODO: add functionality to return a list of messages for this chatroom
+
+    @property
+    def owners(self):
+        return None # TODO: return list of owner users
+
+    @property
+    def members(self):
+        return None # TODO: return list of members (including owners) as User objects
+
+    def disable(self, u:User):
+
+        # TODO: check if user is an owner of the chatroom or an administrator before disabling
+
+        self.__disabled = True
+
+        self.__updates_pending = True
+
+    def enable(self, u:User):
+
+        # TODO: check if users is an owner of the chatroom or an administrator before enabling
+
+        self.__disabled = False
+
+        self.__updates_pending = True
+
+    @staticmethod
+    def add_to_db(name, private:bool, creator:User):
+
+        db = get_db()
+
+        cur = db.cursor()
+
+        try:
+            cur.execute("INSERT INTO ChatRoom (Name, isPrivate, Disabled, CreatedTS) VALUES (?, ?, ?, ?)",
+                        [name, int(private), 0, datetime.now().timestamp()])
+
+            new_chatroom_id = cur.lastrowid
+
+            # Add the creator user as the owner of the chatroom by adding a ChatRoomMembership record
+            cur.execute("INSERT INTO ChatRoomMembership (UserID, ChatroomID, Owner, Confirmed) VALUES (?, ?, ?, ?)",
+                        [creator.id, new_chatroom_id, 1, 1])
+
+            db.commit()
+
+            return Chatroom(new_chatroom_id)
+
+        except sqlite3.Error as e:
+            db.rollback()
+            raise e
+
+    def update_in_db(self):
+
+        if self.__updates_pending:
+
+            db = get_db()
+
+            try:
+
+                db.execute("UPDATE ChatRoom SET Name = ?, isPrivate = ?, Disabled = ? WHERE ID=?",
+                           [self.name, self.private, int(self.disabled), int(self.id)])
+
+                db.commit()
+
+            except sqlite3.Error as e:
+
+                db.rollback()
+                raise e
+
+    def delete_from_db(self, auth_user:User):
+
+        if auth_user.userType != "Admin":
+            raise UserNotAdminError("Only administrator users can delete chatrooms from the database!")
+
+        db = get_db()
+
+        try:
+            db.execute("DELETE FROM ChatRoom WHERE ID=?", [self.id])
+            db.execute("DELETE FROM ChatRoomMembership WHERE ChatroomID=?", [self.id])
+            db.commit()
+
+        except sqlite3.Error as e:
+            db.rollback()
+            raise e
+

@@ -11,7 +11,7 @@ Message.add_attachment() - invokes MessageAttachment.add_to_db() but using messa
 User login / authentication
 
 Chatrooms...
-- Create a new chatroom
+- Create a new chatroom - DONE
 - Get all members of a chatroom (uses ChatRoomMembership table)
 - Add a user to a chatroom
 - Confirm a user's membership
