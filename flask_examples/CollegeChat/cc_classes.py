@@ -1,8 +1,17 @@
-from app import get_db
+#from app import get_db
 from abc import ABC, abstractmethod
 from datetime import datetime
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
+
+
+# Comment out when using with flask! ONLY FOR TESTING CLASSES!
+def get_db():
+    db = sqlite3.connect('CC.db')
+    db.row_factory = sqlite3.Row
+    return db
+
+
 
 class DBObject(ABC):
 
@@ -80,7 +89,6 @@ class User(DBObject):
         self.__email = email
         self.__pendingChanges = True
 
-
     @property
     def joined(self):
         return self.__joined
@@ -93,6 +101,10 @@ class User(DBObject):
     def set_lastLogin(self, ts):
         self.__lastLogin = datetime.fromisoformat(ts)
         self.__pendingChanges = True
+
+    @property
+    def chatroom_memberships(self):
+        return self.__get_chatroom_memberships_for_user()
 
     def update_in_db(self):
         if self.__pendingChanges:
@@ -120,6 +132,27 @@ class User(DBObject):
         except sqlite3.Error as e:
             db.rollback()
             raise e
+
+    def __get_chatroom_memberships_for_user(self):
+
+        db = get_db()
+
+        crm_rows = db.execute("SELECT ChatroomID, Owner, Confirmed FROM ChatRoomMembership WHERE UserID=?", [self.id]).fetchall()
+
+        crms = []
+
+        for row in crm_rows:
+
+            crms.append(
+                ChatroomMembership(
+                    Chatroom(row['ChatroomID']),
+                    self,
+                    bool(row['Confirmed']),
+                    bool(row['Owner'])
+                )
+            )
+
+        return crms
 
     @staticmethod
     def add_to_db(username, email, password, usertype):
@@ -162,7 +195,10 @@ class User(DBObject):
 class MessageAttachmentNotFoundError(Exception):
     pass
 
-class MessageAttachement(DBObject):
+class MessageAttachmentTypeError(Exception):
+    pass
+
+class MessageAttachment(DBObject):
 
     def __init__(self, id):
 
@@ -204,9 +240,37 @@ class MessageAttachement(DBObject):
     def thumbnail(self):
         return self.__thumbnail_filepath
 
-    def add_to_db(self):
-        #TODO: Add ability to add attachments to DB. Check that parent message ID is valid first
-        pass
+    @staticmethod
+    def add_to_db(message, AttachmentType, OriginalFilePath, ThumbnailPath):
+
+        db = get_db()
+
+        cur = db.cursor()
+
+        attachment_type_id = MessageAttachment.get_attachment_type_id(AttachmentType)
+
+        try:
+            cur.execute("INSERT INTO Attachment (MessageID, AttachmentTypeID, OriginalFilePath, ThumbnailFilePath) VALUES (?, ?, ?, ?)", [message.id, attachment_type_id, OriginalFilePath, ThumbnailPath])
+            new_attachment_id = cur.lastrowid
+            db.commit()
+
+            return MessageAttachment(new_attachment_id)
+
+        except sqlite3.Error as e:
+            db.rollback()
+            raise e
+
+    @staticmethod
+    def get_attachment_type_id(attachment_type):
+
+        db = get_db()
+
+        attachment_type_row = db.execute("SELECT ID FROM AttachmentType WHERE Description=?", [attachment_type]).fetchone()
+
+        if not attachment_type_row:
+            raise MessageAttachmentTypeError("{} is not a valid message attachment type!".format(attachment_type))
+
+        return int(attachment_type_row['ID'])
 
     def update_in_db(self):
         pass
@@ -259,7 +323,7 @@ class Message(DBObject):
 
     @property
     def chatroom(self):
-        return None # TODO: Return chatroom object when implemented
+        return Chatroom(self.__chatroomID)
 
     @property
     def ts(self):
@@ -277,6 +341,12 @@ class Message(DBObject):
     def attachments(self):
         return self.__get_attachments()
 
+    def add_attachment(self, attachment_type, original_file_path, thumbnail_file_path):
+
+        a = MessageAttachment.add_to_db(self, attachment_type, original_file_path, thumbnail_file_path)
+
+        return a
+
     def __get_attachments(self):
 
         db = get_db()
@@ -286,7 +356,7 @@ class Message(DBObject):
         attachment_list = []
 
         for row in attachment_rows:
-            attachment_list.append(MessageAttachement(int(attachment_rows['ID'])))
+            attachment_list.append(MessageAttachment(int(row['ID'])))
 
         return attachment_list
 
@@ -318,6 +388,23 @@ class Message(DBObject):
 class ChatroomNotFoundError(Exception):
     pass
 
+class ChatroomConfirmMemberError(Exception):
+    pass
+
+class ChatroomRemoveMemberError(Exception):
+    pass
+
+class ChatroomAddMemberError(Exception):
+    pass
+
+class ChatroomMembership:
+
+    def __init__(self, cr, u, confirmed, owner):
+
+        self.chatroom = cr
+        self.member = u
+        self.confirmed = confirmed
+        self.owner = owner
 
 class Chatroom(DBObject):
 
@@ -365,31 +452,101 @@ class Chatroom(DBObject):
 
     @property
     def messages(self):
-        return None #TODO: add functionality to return a list of messages for this chatroom
+        return self.__get_messages_for_chatroom()
 
     @property
     def owners(self):
-        return None # TODO: return list of owner users
+        return self.__get_members_of_chatroom(True)
 
     @property
     def members(self):
-        return None # TODO: return list of members (including owners) as User objects
+        return self.__get_members_of_chatroom(False, True)
+
+    @property
+    def unconfirmed_members(self):
+
+        ms = self.__get_members_of_chatroom(False, False)
+
+        unconfirmed_members = []
+
+        for m in ms:
+
+            if not Chatroom.getMembershipStatus(self, m).confirmed:
+                unconfirmed_members.append(m)
+
+        return unconfirmed_members
 
     def disable(self, u:User):
 
-        # TODO: check if user is an owner of the chatroom or an administrator before disabling
+        if u.userType == "Admin" or self.getMembershipStatus(self, u).owner:
 
-        self.__disabled = True
+            self.__disabled = True
 
-        self.__updates_pending = True
+            self.__updates_pending = True
+
+        else:
+
+            raise UserNotAdminError("Only administrator users or owners of chatrooms can disable the chatroom.")
 
     def enable(self, u:User):
 
-        # TODO: check if users is an owner of the chatroom or an administrator before enabling
+        if u.userType == "Admin" or self.getMembershipStatus(self, u).owner:
 
-        self.__disabled = False
+            self.__disabled = False
 
-        self.__updates_pending = True
+            self.__updates_pending = True
+
+        else:
+
+            raise UserNotAdminError("Only administrator users or owners of chatrooms can enable the chatroom.")
+
+    def __get_members_of_chatroom(self, get_owners_only=False, get_confirmed_only=False):
+
+        db = get_db()
+
+        members_list = []
+
+        sql = "SELECT UserID FROM ChatRoomMembership WHERE ChatroomID=?"
+
+        if get_owners_only:
+
+            sql += " AND Owner=1"
+
+        if get_confirmed_only:
+
+            sql += " AND Confirmed=1"
+
+        member_rows = db.execute(sql, [self.id]).fetchall()
+
+        for row in member_rows:
+
+            members_list.append(User(int(row['UserID'])))
+
+        return members_list
+
+    def __get_messages_for_chatroom(self, since_id=None):
+
+        db = get_db()
+
+        messages_list = []
+
+        sql = "SELECT Message.ID FROM Message WHERE Message.ChatroomID=?"
+
+        values = [self.id]
+
+        if since_id:
+            sql += " AND Message.ID > ?"
+            values.append(since_id)
+
+        message_rows = db.execute(sql, values).fetchall()
+
+        for row in message_rows:
+            messages_list.append(Message(int(row['ID'])))
+
+        return messages_list
+
+    def get_new_messages(self, since_id):
+        return self.__get_messages_for_chatroom(since_id)
 
     @staticmethod
     def add_to_db(name, private:bool, creator:User):
@@ -450,3 +607,154 @@ class Chatroom(DBObject):
             db.rollback()
             raise e
 
+    def add_member(self, u: User, is_owner=False, confirmed=False):
+
+        all_members_ids = []
+
+        for m in self.__get_members_of_chatroom(False, False):
+            all_members_ids.append(m.id)
+
+        if u.id not in all_members_ids:
+
+            db = get_db()
+
+            try:
+
+                db.execute("INSERT INTO ChatRoomMembership (UserID, ChatroomID, Owner, Confirmed) VALUES (?, ?, ?, ?)", [u.id, self.id, int(is_owner), int(confirmed)])
+
+                db.commit()
+
+            except sqlite3.Error as e:
+
+                db.rollback()
+                raise e
+
+    def remove_member(self, u:User):
+
+        # Check user to be removed isn't last owner of group
+
+        owner_ids = [u.id for u in self.owners]
+
+        if len(owner_ids) == 1 and u.id in owner_ids:
+            raise ChatroomRemoveMemberError("Cannot remove user {} as they are the only remaining owner for chatroom {}".format(u.username, self.id))
+
+        member_ids = [u.id for u in self.__get_members_of_chatroom(False, False)]
+
+        if u.id not in member_ids:
+            raise ChatroomRemoveMemberError("User {} not a member of chatroom {}".format(u.id, self.id))
+
+        db = get_db()
+
+        try:
+
+            db.execute("DELETE FROM ChatRoomMembership WHERE ChatroomID=? AND UserID=?", [self.id, u.id])
+            db.commit()
+
+        except sqlite3.Error as e:
+
+            db.rollback()
+            raise e
+
+    def confirm_member(self, u: User):
+
+        member_ids = []
+
+        for m in self.__get_members_of_chatroom(False, False):
+            member_ids.append(m.id)
+
+        if u.id not in member_ids:
+            raise ChatroomConfirmMemberError("User {} not a member of chatroom {}, cannot therefore confirm their membership!".format(u.username, self.id))
+
+        db = get_db()
+
+        try:
+            db.execute("UPDATE ChatRoomMembership SET Confirmed = 1 WHERE UserID = ? AND ChatroomID = ?", [u.id, self.id])
+            db.commit()
+
+        except sqlite3.Error as e:
+            db.rollback()
+            raise e
+
+    def set_member_as_owner(self, u: User):
+
+        member_ids = [m.id for m in self.__get_members_of_chatroom(False, True)]
+
+        if u.id not in member_ids:
+            raise ChatroomConfirmMemberError("User {} not a member of chatroom {}, cannot therefore make them an owner!".format(u.username, self.id))
+
+        db = get_db()
+
+        try:
+
+            db.execute("UPDATE ChatRoomMembership SET Owner = 1 WHERE ChatroomID = ? and UserID = ?", [self.id, u.id])
+            db.commit()
+
+        except sqlite3.Error as e:
+
+            db.rollback()
+            raise e
+
+    def add_message(self, contents, sender: User, sender_ip, sender_ua):
+
+        m = Message.add_to_db(contents, sender.id, self.id, sender_ip, sender_ua)
+
+        return m
+
+    @staticmethod
+    def getMembershipStatus(cr, u: User):
+
+        db = get_db()
+
+        member_row = db.execute("SELECT Owner, Confirmed FROM ChatRoomMembership WHERE ChatroomID = ? AND UserID = ?", [cr.id, u.id]).fetchone()
+
+        if member_row:
+
+            ms = ChatroomMembership(cr, u, bool(member_row['Confirmed']),
+                                    bool(member_row['Owner']))
+            return ms
+
+        else:
+
+            return None
+
+
+if __name__ == '__main__':
+
+
+    cr = Chatroom(1)
+
+    print(cr.name)
+    print("--------")
+
+    cr.add_message("Testing adding a new message via chatroom!", User(2), "192.168.0.1", "Some browser")
+
+    for m in cr.messages:
+        print("FROM: {}\t\tDATE: {}".format(m.sender.username, m.ts.isoformat()))
+        print(m.contents)
+        print("*** END OF MESSAGE ***\n")
+
+    cr.add_member(User(1))
+    cr.confirm_member(User(1))
+    for member in cr.members:
+        print(member.username)
+
+    cr.set_member_as_owner(User(1))
+
+
+    for member in cr.owners:
+        print(member.username)
+
+
+    u = User(1)
+
+    for crm in u.chatroom_memberships:
+
+        print(crm.chatroom.name)
+
+
+    m = Message(5)
+
+    m.add_attachment("Video", "video.avi", "video_thumb.jpg")
+
+    for a in m.attachments:
+        print("Message attachment found: {}".format(a.id))

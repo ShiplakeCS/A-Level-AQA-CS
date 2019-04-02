@@ -1,24 +1,7 @@
-Classes to implement:
 
-- Chatroom
 
-Add Class methods to...
-
-Get all messages for a user
-Get all messages for a chat room
-Create a new message (User.create_message(text,attachment,creator_id)
-Message.add_attachment() - invokes MessageAttachment.add_to_db() but using message's self.id as parent id
 User login / authentication
 
-Chatrooms...
-- Create a new chatroom - DONE
-- Get all members of a chatroom (uses ChatRoomMembership table)
-- Add a user to a chatroom
-- Confirm a user's membership
-- Change user role / ownership of chatroom
-- Get all messages for a chatroom (able to specify order)
-- Get all messages SINCE ID (specify order, default is oldest first)
-- Add a new message to a chatroom (invokes message.add_to_db using chatroom ID as parent chatroom)
 
 
 toJSON() methods - can be invoked by .json property
