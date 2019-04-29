@@ -1,9 +1,25 @@
 
 
 User login / authentication
+- Add to User class the functionality for logging in
 
-
-
-toJSON() methods - can be invoked by .json property
+For all data - needed?
+- toJSON() methods - can be invoked by .json property
 
 HTML Template pages to provide functionality
+- Intro to HTML - <head> <body> <div>
+- Create a placeholder/static HTML page to show messages
+- Introduction to Jinja2 templates and passing data from Flask to template
+- Viewing a chatroom - specify chatroom ID in URL
+- - Exception handling: chatroom not found, show 404 page
+- Post a message (without attachment to start) - form, send data back to database
+- Add attachment as file upload form
+- Add authentication - check user is a member of the chatroom
+
+Add style
+- intro to CSS - classes and ID based style
+- Add styles to DIVs in message view page
+
+Add Bootstap style
+- Load in Bootstrap JS
+- Style messages as cards

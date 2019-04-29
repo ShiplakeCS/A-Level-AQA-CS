@@ -1,4 +1,4 @@
-#from app import get_db
+from app import get_db
 from abc import ABC, abstractmethod
 from datetime import datetime
 import sqlite3
@@ -6,11 +6,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 
 # Comment out when using with flask! ONLY FOR TESTING CLASSES!
-def get_db():
-    db = sqlite3.connect('CC.db')
-    db.row_factory = sqlite3.Row
-    return db
-
+# def get_db():
+#     db = sqlite3.connect('CC.db')
+#     db.row_factory = sqlite3.Row
+#     return db
 
 
 class DBObject(ABC):

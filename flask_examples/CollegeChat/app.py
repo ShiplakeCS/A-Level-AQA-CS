@@ -46,6 +46,14 @@ def hello_world():
 def say_hello(user):
     return '<h1 style="color:red">Hello <span style="color:blue">{}</span>!</h1>'.format(user)
 
+@app.route('/chatroom/<chatroomID>/view')
+def view_chatroom(chatroomID):
+
+    cr = cc_classes.Chatroom(chatroomID)
+
+    return render_template('view_chatroom.html', chatroom=cr)
+
+
 
 # TEST ROUTES
 @app.route('/tests/users/<id>')
