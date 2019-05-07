@@ -1,4 +1,4 @@
-from flask import Flask, g, render_template, request, redirect, url_for
+from flask import Flask, g, render_template, request, redirect, url_for, abort
 import os, sqlite3
 from flask_examples.CollegeChat import cc_classes
 
@@ -54,6 +54,11 @@ def view_chatroom(chatroomID):
     return render_template('view_chatroom.html', chatroom=cr)
 
 
+@app.route('/messages/view/<id>')
+def view_message(id):
+    m = cc_classes.Message(id)
+    return render_template('view_message.html', message=m)
+
 
 # TEST ROUTES
 @app.route('/tests/users/<id>')
@@ -63,8 +68,12 @@ def tests_user_id(id):
 
 @app.route('/tests/messages/<int:id>')
 def tests_messages_id(id):
-    m = cc_classes.Message(id)
-    return "Message ID: {}, Contents: {}, Sender: {}, Message sent: {}".format(m.id, m.contents, m.sender.username, m.ts)
+
+    try:
+        m = cc_classes.Message(id)
+        return "Message ID: {}, Contents: {}, Sender: {}, Message sent: {}".format(m.id, m.contents, m.sender.username, m.ts)
+    except cc_classes.MessageNotFoundError:
+        return "Message not found", 404
 
 @app.route('/tests/messages/add')
 def tests_messages_add():

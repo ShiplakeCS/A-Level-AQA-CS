@@ -5,7 +5,7 @@ import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
-# Comment out when using with flask! ONLY FOR TESTING CLASSES!
+# # Comment out when using with flask! ONLY FOR TESTING CLASSES!
 # def get_db():
 #     db = sqlite3.connect('CC.db')
 #     db.row_factory = sqlite3.Row
