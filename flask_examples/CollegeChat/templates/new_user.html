@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CollegeChat - Register user</title>
+    <link href="/static/collegechat.css" rel="stylesheet">
+</head>
+<body>
+    <h1>Register a new user</h1>
+
+    {% if flash_messages %}
+
+    <div class="error_messages">
+
+        {% for m in flash_messages %}
+
+        <p>{{ m }}</p>
+
+        {% endfor %}
+
+    </div>
+
+    {% endif %}
+
+    <form action="/users/add" method="post">
+        <label for="email">email: </label>
+        <input type="email" name="email"><br>
+        <label for="username">Username:</label>
+        <input type="text" name="username"> <br>
+        <label for="password">Password: </label>
+        <input type="password" name="password"> <br>
+        <label for="confirm_password">Confirm password: </label>
+        <input type="password" name="confirm_password">
+        <input type="submit" value="Register user">
+    </form>
+</body>
+</html>

@@ -1,28 +1,34 @@
 body {
-    font-family: sans-serif;
+    font-family: 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva', 'Verdana', sans-serif;
 }
 
 .message{
-    border: 1px;
+
     border-style: solid;
-    padding: 5px;
-    margin: 5px 0px;
+    border-width: thin;
+    border-color: navy;
     border-radius: 4px;
-    border-color: #aaaaaa;
-    background-color: #eeeeee;
+    margin-bottom: 10px;
+    padding: 5px;
+    box-shadow: -1px 2px 4px 0px #aaaaaa;
+    background-color: #16c7ff;
+
+}
+
+.message_body{
+        display: inline-block;
 }
 
 .message_sender{
     display: inline-block;
-    width: 50px;
-    font-weight: bold;
+    min-width: 50px;
+    font-weight: bolder;
+    color: red;
 }
 
-.message_body{
-    display: inline-block;
-}
 .message_timestamp{
-    font-size: small;
-    color: darkgrey;
-
+    font-size: xx-small;
+    color: white;
+    font-style: italic;
+    margin-top: 2px;
 }

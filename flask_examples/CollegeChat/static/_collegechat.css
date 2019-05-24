@@ -1,0 +1,28 @@
+body {
+    font-family: sans-serif;
+}
+
+.message{
+    border: 1px;
+    border-style: solid;
+    padding: 5px;
+    margin: 5px 0px;
+    border-radius: 4px;
+    border-color: #aaaaaa;
+    background-color: #eeeeee;
+}
+
+.message_sender{
+    display: inline-block;
+    width: 50px;
+    font-weight: bold;
+}
+
+.message_body{
+    display: inline-block;
+}
+.message_timestamp{
+    font-size: small;
+    color: darkgrey;
+
+}

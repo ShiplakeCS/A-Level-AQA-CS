@@ -36,6 +36,9 @@ class UserNotFoundError(Exception):
 class UserNotAdminError(Exception):
     pass
 
+class UserPasswordInvalid(Exception):
+    pass
+
 class User(DBObject):
 
     def __init__(self, id):
@@ -190,6 +193,30 @@ class User(DBObject):
             valid_user_types.append(row['Description'])
 
         return valid_user_types
+
+    @staticmethod
+    def login_user(username, password):
+
+        db = get_db()
+
+        user_row = db.execute("SELECT ID, Password FROM User WHERE Username = ?", [username]).fetchone()
+
+        if user_row:
+
+            if check_password_hash(user_row['Password'], password):
+
+                u = User(user_row['ID'])
+
+                return u
+
+            else:
+
+                raise UserPasswordInvalid
+
+        else:
+
+            raise UserNotFoundError
+
 
 class MessageAttachmentNotFoundError(Exception):
     pass

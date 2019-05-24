@@ -1,4 +1,4 @@
-from flask import Flask, g, render_template, request, redirect, url_for, abort
+from flask import Flask, g, render_template, request, redirect, url_for, abort, flash, get_flashed_messages
 import os, sqlite3
 from flask_examples.CollegeChat import cc_classes
 
@@ -49,9 +49,25 @@ def say_hello(user):
 @app.route('/chatroom/<chatroomID>/view')
 def view_chatroom(chatroomID):
 
+    chatroom = cc_classes.Chatroom(chatroomID)
+
+    return render_template('chatroom.html', cr=chatroom)
+
+
+@app.route('/chatroom/<chatroomID>/messages/add', methods=['post'])
+def add_message_to_chatroom(chatroomID):
+
+    message_text = request.form['new_message_text']
+    ip = request.remote_addr
+    ua = str(request.user_agent)
+
     cr = cc_classes.Chatroom(chatroomID)
 
-    return render_template('view_chatroom.html', chatroom=cr)
+    cr.add_message(message_text, cc_classes.User(1), ip, ua)
+
+    return redirect(url_for('view_chatroom', chatroomID=chatroomID))
+
+
 
 
 @app.route('/messages/view/<id>')
@@ -59,6 +75,33 @@ def view_message(id):
     m = cc_classes.Message(id)
     return render_template('view_message.html', message=m)
 
+
+@app.route('/users/add', methods=['GET', 'POST'])
+def register_new_user():
+
+    if request.method == "GET":
+
+        return render_template('new_user.html', flash_messages=get_flashed_messages())
+
+    else:
+
+        # Check passwords match
+
+        if request.form['password'] != request.form['confirm_password']:
+            flash("Passwords do not match!", "errors")
+            flash("test")
+            return redirect(url_for('register_new_user'))
+
+        try:
+
+            new_user = cc_classes.User.add_to_db(request.form['username'], request.form['email'], request.form['password'], 'StandardUser')
+
+            return 'User created! ID: {}'.format(new_user.id)
+
+        except sqlite3.IntegrityError as e:
+
+            flash(str(e), "errors")
+            return redirect(url_for('register_new_user'))
 
 # TEST ROUTES
 @app.route('/tests/users/<id>')
