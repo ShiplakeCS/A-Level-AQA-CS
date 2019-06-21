@@ -746,41 +746,53 @@ class Chatroom(DBObject):
 
 if __name__ == '__main__':
 
+## TEST METHODS
 
     cr = Chatroom(1)
 
-    print(cr.name)
-    print("--------")
 
-    cr.add_message("Testing adding a new message via chatroom!", User(2), "192.168.0.1", "Some browser")
+    def ChatroomTests():
 
-    for m in cr.messages:
-        print("FROM: {}\t\tDATE: {}".format(m.sender.username, m.ts.isoformat()))
-        print(m.contents)
-        print("*** END OF MESSAGE ***\n")
+        """
+        This is a procedure for testing that I can add things to chatrooms....
+        :return:
+        """
 
-    cr.add_member(User(1))
-    cr.confirm_member(User(1))
-    for member in cr.members:
-        print(member.username)
+        print(cr.name)
+        print("--------")
 
-    cr.set_member_as_owner(User(1))
+        cr.add_message("Testing adding a new message via chatroom!", User(2), "192.168.0.1", "Some browser")
 
+        for m in cr.messages:
+            print("FROM: {}\t\tDATE: {}".format(m.sender.username, m.ts.isoformat()))
+            print(m.contents)
+            print("*** END OF MESSAGE ***\n")
 
-    for member in cr.owners:
-        print(member.username)
+        cr.add_member(User(1))
+        cr.confirm_member(User(1))
+        for member in cr.members:
+            print(member.username)
 
-
-    u = User(1)
-
-    for crm in u.chatroom_memberships:
-
-        print(crm.chatroom.name)
+        cr.set_member_as_owner(User(1))
 
 
-    m = Message(5)
+        for member in cr.owners:
+            print(member.username)
 
-    m.add_attachment("Video", "video.avi", "video_thumb.jpg")
 
-    for a in m.attachments:
-        print("Message attachment found: {}".format(a.id))
+        u = User(1)
+
+        for crm in u.chatroom_memberships:
+
+            print(crm.chatroom.name)
+
+
+        m = Message(5)
+
+        m.add_attachment("Video", "video.avi", "video_thumb.jpg")
+
+        for a in m.attachments:
+            print("Message attachment found: {}".format(a.id))
+
+
+    ChatroomTests()
