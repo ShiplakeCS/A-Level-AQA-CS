@@ -755,8 +755,10 @@ if __name__ == '__main__':
 
         """
         This is a procedure for testing that I can add things to chatrooms....
-        :return:
+        :return:None
         """
+
+        #TODO: Fix this stuff....
 
         print(cr.name)
         print("--------")
